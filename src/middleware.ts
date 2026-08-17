@@ -1,6 +1,8 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+const LOCALES = ["ro", "en"]
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({
     request: { headers: request.headers },
@@ -26,32 +28,41 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser()
+    user = authUser
+  } catch {
+    // Auth check failed, continue without user
+  }
 
-  // Protected routes
+  const pathname = request.nextUrl.pathname
+  const pathWithoutLocale = "/" + pathname.split("/").slice(2).join("/")
+
   const protectedRoutes = ["/checkout", "/orders", "/account"]
   const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
+    pathWithoutLocale.startsWith(route)
   )
 
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone()
-    url.pathname = "/login"
-    url.searchParams.set("redirect", request.nextUrl.pathname)
+    const locale = LOCALES.includes(pathname.split("/")[1]) ? pathname.split("/")[1] : "ro"
+    url.pathname = `/${locale}/login`
+    url.searchParams.set("redirect", pathname)
     return NextResponse.redirect(url)
   }
 
-  // If user is logged in and trying to access auth pages, redirect to home
   const authRoutes = ["/login", "/register"]
   const isAuthRoute = authRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
+    pathWithoutLocale.startsWith(route)
   )
 
   if (isAuthRoute && user) {
     const url = request.nextUrl.clone()
-    url.pathname = "/"
+    const locale = LOCALES.includes(pathname.split("/")[1]) ? pathname.split("/")[1] : "ro"
+    url.pathname = `/${locale}`
     return NextResponse.redirect(url)
   }
 
@@ -60,13 +71,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }
