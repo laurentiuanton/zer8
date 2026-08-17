@@ -5,9 +5,10 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ShoppingBag, Eye } from "lucide-react"
+import { ShoppingBag, Eye, Heart } from "lucide-react"
 import { useCurrencyStore, formatPrice } from "@/stores/currency"
 import { useCartStore } from "@/stores/cart"
+import { useWishlistStore } from "@/stores/wishlist"
 
 interface ProductCardProps {
   product: {
@@ -27,6 +28,9 @@ interface ProductCardProps {
 export function ProductCard({ product, locale }: ProductCardProps) {
   const { currency } = useCurrencyStore()
   const addItem = useCartStore((state) => state.addItem)
+  const { toggleItem, isInWishlist } = useWishlistStore()
+
+  const inWishlist = isInWishlist(product.id)
 
   // Get translated name
   const translatedName = product.translations?.find((t) => t.locale === locale)?.name || product.name
@@ -52,6 +56,19 @@ export function ProductCard({ product, locale }: ProductCardProps) {
       image: image?.url || "/placeholder.svg",
       quantity: 1,
       stockQuantity: totalStock,
+    })
+  }
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    toggleItem({
+      productId: product.id,
+      name: translatedName,
+      slug: product.slug,
+      price: product.price,
+      image: image?.url || "/placeholder.svg",
     })
   }
 
@@ -89,6 +106,14 @@ export function ProductCard({ product, locale }: ProductCardProps) {
 
           {/* Quick Actions */}
           <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <Button
+              size="icon"
+              variant="secondary"
+              className={`h-10 w-10 rounded-full bg-background/80 backdrop-blur hover:bg-primary hover:text-primary-foreground ${inWishlist ? "text-red-500" : ""}`}
+              onClick={handleToggleWishlist}
+            >
+              <Heart className={`h-4 w-4 ${inWishlist ? "fill-current" : ""}`} />
+            </Button>
             <Button
               size="icon"
               variant="secondary"

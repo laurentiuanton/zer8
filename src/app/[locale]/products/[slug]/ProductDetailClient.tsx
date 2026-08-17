@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ShoppingBag, Heart, Share2, Minus, Plus, Check } from "lucide-react"
+import { ShoppingBag, Heart, Share2, Minus, Plus, Check, CheckCheck } from "lucide-react"
 import { useCurrencyStore, formatPrice } from "@/stores/currency"
 import { useCartStore } from "@/stores/cart"
+import { useWishlistStore } from "@/stores/wishlist"
 import { validateCartItem } from "@/actions/cart"
 
 interface ProductVariant {
@@ -37,11 +38,15 @@ interface ProductDetailClientProps {
 export default function ProductDetailClient({ product, locale }: ProductDetailClientProps) {
   const { currency } = useCurrencyStore()
   const addItem = useCartStore((state) => state.addItem)
+  const { toggleItem, isInWishlist } = useWishlistStore()
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     product.product_variants[1] || product.product_variants[0] || null
   )
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
+
+  const inWishlist = isInWishlist(product.id)
 
   const translation = product.product_translations.find((t) => t.locale === locale)
   const productName = translation?.name || product.name
@@ -49,7 +54,7 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
 
   const totalStock = product.product_variants.reduce((sum, v) => sum + v.stock_quantity, 0)
 
-  const images = product.product_images || []
+  const images = useMemo(() => product.product_images || [], [product.product_images])
 
   const handleAddToCart = async () => {
     if (!selectedVariant || selectedVariant.stock_quantity <= 0) return
@@ -74,6 +79,43 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
 
     setTimeout(() => setIsAdding(false), 1000)
   }
+
+  const handleToggleWishlist = useCallback(() => {
+    toggleItem({
+      productId: product.id,
+      name: productName,
+      slug: product.slug,
+      price: selectedVariant?.price || product.price,
+      image: images[0]?.url || "/placeholder.svg",
+    })
+  }, [toggleItem, product.id, productName, product.slug, selectedVariant, product.price, images])
+
+  const handleShare = useCallback(async () => {
+    const url = typeof window !== "undefined" ? window.location.href : ""
+    const shareData = {
+      title: productName,
+      text: locale === "ro"
+        ? ` verifica acest produs pe ZER8!`
+        : ` check out this product on ZER8!`,
+      url,
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url)
+        setIsCopied(true)
+        setTimeout(() => setIsCopied(false), 2000)
+      } catch {
+        // Clipboard write failed
+      }
+    }
+  }, [productName, locale])
 
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
@@ -233,13 +275,25 @@ export default function ProductDetailClient({ product, locale }: ProductDetailCl
             </Button>
 
             <div className="flex gap-4">
-              <Button variant="outline" className="flex-1 min-h-[48px]">
-                <Heart className="h-4 w-4 mr-2" />
-                {locale === "ro" ? "Adauga la favorite" : "Add to Wishlist"}
+              <Button
+                variant={inWishlist ? "default" : "outline"}
+                className="flex-1 min-h-[48px]"
+                onClick={handleToggleWishlist}
+              >
+                <Heart className={`h-4 w-4 mr-2 ${inWishlist ? "fill-current" : ""}`} />
+                {inWishlist
+                  ? (locale === "ro" ? "In favorite" : "In Wishlist")
+                  : (locale === "ro" ? "Adauga la favorite" : "Add to Wishlist")}
               </Button>
-              <Button variant="outline" className="flex-1 min-h-[48px]">
-                <Share2 className="h-4 w-4 mr-2" />
-                {locale === "ro" ? "Distribuie" : "Share"}
+              <Button variant="outline" className="flex-1 min-h-[48px]" onClick={handleShare}>
+                {isCopied ? (
+                  <CheckCheck className="h-4 w-4 mr-2 text-green-500" />
+                ) : (
+                  <Share2 className="h-4 w-4 mr-2" />
+                )}
+                {isCopied
+                  ? (locale === "ro" ? "Copiat!" : "Copied!")
+                  : (locale === "ro" ? "Distribuie" : "Share")}
               </Button>
             </div>
 
