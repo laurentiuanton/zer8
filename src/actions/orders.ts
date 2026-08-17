@@ -276,7 +276,7 @@ export async function placeOrder(data: OrderData) {
     if (process.env.RESEND_API_KEY) {
       try {
         await resend.emails.send({
-          from: "ZER8 <noreply@zer8.ro>",
+          from: "ZER8 <onboarding@resend.dev>",
           to: data.shippingAddress.email,
           subject:
             data.locale === "ro"
@@ -284,8 +284,8 @@ export async function placeOrder(data: OrderData) {
               : `ZER8 — Order #${order.id.slice(0, 8).toUpperCase()} confirmed`,
           html: buildConfirmationEmail(order.id, data, data.locale),
         })
-      } catch {
-        // Email failed but order was placed
+      } catch (emailErr) {
+        console.error("Email send failed:", emailErr)
       }
     }
 
