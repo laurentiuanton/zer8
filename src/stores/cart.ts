@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { persist, createJSONStorage } from "zustand/middleware"
 
 export interface CartItem {
   id: string
@@ -25,6 +25,42 @@ interface CartState {
   getItemCount: () => number
 }
 
+function setCookie(name: string, value: string, days: number) {
+  if (typeof document === "undefined") return
+  const expires = new Date(Date.now() + days * 864e5).toUTCString()
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
+}
+
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+function deleteCookie(name: string) {
+  if (typeof document === "undefined") return
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+}
+
+// Custom storage: writes to both localStorage AND cookie as backup
+const cartStorage = createJSONStorage<CartState>(() => ({
+  getItem: (name: string) => {
+    // Try localStorage first
+    const ls = localStorage.getItem(name)
+    if (ls) return ls
+    // Fallback to cookie
+    return getCookie(name)
+  },
+  setItem: (name: string, value: string) => {
+    localStorage.setItem(name, value)
+    setCookie(name, value, 30)
+  },
+  removeItem: (name: string) => {
+    localStorage.removeItem(name)
+    deleteCookie(name)
+  },
+}))
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -36,7 +72,6 @@ export const useCartStore = create<CartState>()(
         )
 
         if (existingItem) {
-          // Update quantity
           set({
             items: get().items.map((i) =>
               i.id === existingItem.id
@@ -45,7 +80,6 @@ export const useCartStore = create<CartState>()(
             ),
           })
         } else {
-          // Add new item
           const newItem: CartItem = {
             ...item,
             id: `${item.productId}-${item.variantId || "default"}-${Date.now()}`,
@@ -83,6 +117,7 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "cart-storage",
+      storage: cartStorage,
     }
   )
 )

@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { persist, createJSONStorage } from "zustand/middleware"
 
 type Currency = "RON" | "EUR"
 
@@ -7,6 +7,39 @@ interface CurrencyState {
   currency: Currency
   setCurrency: (currency: Currency) => void
 }
+
+function setCookie(name: string, value: string, days: number) {
+  if (typeof document === "undefined") return
+  const expires = new Date(Date.now() + days * 864e5).toUTCString()
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
+}
+
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+function deleteCookie(name: string) {
+  if (typeof document === "undefined") return
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+}
+
+const currencyStorage = createJSONStorage<CurrencyState>(() => ({
+  getItem: (name: string) => {
+    const ls = localStorage.getItem(name)
+    if (ls) return ls
+    return getCookie(name)
+  },
+  setItem: (name: string, value: string) => {
+    localStorage.setItem(name, value)
+    setCookie(name, value, 30)
+  },
+  removeItem: (name: string) => {
+    localStorage.removeItem(name)
+    deleteCookie(name)
+  },
+}))
 
 export const useCurrencyStore = create<CurrencyState>()(
   persist(
@@ -16,6 +49,7 @@ export const useCurrencyStore = create<CurrencyState>()(
     }),
     {
       name: "currency-storage",
+      storage: currencyStorage,
     }
   )
 )
