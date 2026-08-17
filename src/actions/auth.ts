@@ -25,12 +25,11 @@ export async function getUser(): Promise<AuthUser | null> {
 
 export async function signInWithGoogle(locale: string) {
   const supabase = await createClient()
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback?locale=${locale}`,
+      redirectTo: `https://zer8.vercel.app/auth/callback?locale=${locale}`,
     },
   })
 
@@ -69,7 +68,6 @@ export async function signUp(formData: {
   locale: string
 }) {
   const supabase = await createClient()
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
   const { error } = await supabase.auth.signUp({
     email: formData.email,
@@ -78,7 +76,7 @@ export async function signUp(formData: {
       data: {
         full_name: formData.fullName,
       },
-      emailRedirectTo: `${origin}/auth/callback?locale=${formData.locale}`,
+      emailRedirectTo: `https://zer8.vercel.app/auth/callback?locale=${formData.locale}`,
     },
   })
 
