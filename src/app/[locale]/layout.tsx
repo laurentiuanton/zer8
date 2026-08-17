@@ -1,8 +1,6 @@
 import type { Metadata } from "next"
-import { Header } from "@/components/layout/Header"
-import { Footer } from "@/components/layout/Footer"
-import { CookieConsent } from "@/components/marketing/CookieConsent"
 import { getUser } from "@/actions/auth"
+import { SiteLayout } from "@/components/layout/SiteLayout"
 
 export const metadata: Metadata = {
   title: "ZER8 - Magazin Oficial",
@@ -26,11 +24,8 @@ export default async function LocaleLayout({
   const user = await getUser()
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header locale={validLocale as "ro" | "en"} user={user} />
-      <main className="flex-1">{children}</main>
-      <Footer locale={validLocale as "ro" | "en"} />
-      <CookieConsent locale={validLocale as "ro" | "en"} />
-    </div>
+    <SiteLayout locale={validLocale as "ro" | "en"} user={user}>
+      {children}
+    </SiteLayout>
   )
 }

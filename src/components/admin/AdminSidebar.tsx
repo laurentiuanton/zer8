@@ -18,17 +18,20 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Produse", icon: Package },
-  { href: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
-  { href: "/admin/categories", label: "Categorii", icon: Tag },
-  { href: "/admin/customers", label: "Clienti", icon: Users },
-  { href: "/admin/newsletter", label: "Newsletter", icon: Mail },
+  { segment: "admin", label: "Dashboard", icon: LayoutDashboard },
+  { segment: "admin/products", label: "Produse", icon: Package },
+  { segment: "admin/orders", label: "Comenzi", icon: ShoppingCart },
+  { segment: "admin/categories", label: "Categorii", icon: Tag },
+  { segment: "admin/customers", label: "Clienti", icon: Users },
+  { segment: "admin/newsletter", label: "Newsletter", icon: Mail },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+
+  const locale = pathname.split("/")[1] || "ro"
+  const basePath = `/${locale}`
 
   return (
     <aside
@@ -39,7 +42,7 @@ export function AdminSidebar() {
     >
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!collapsed && (
-          <Link href="/admin" className="text-lg font-bold text-primary tracking-widest">
+          <Link href={`${basePath}/admin`} className="text-lg font-bold text-primary tracking-widest">
             ZER8<span className="text-accent">_admin</span>
           </Link>
         )}
@@ -55,15 +58,16 @@ export function AdminSidebar() {
 
       <nav className="flex-1 p-2 space-y-1">
         {navItems.map((item) => {
+          const href = `${basePath}/${item.segment}`
           const isActive =
-            item.href === "/admin"
-              ? pathname === "/admin"
-              : pathname.startsWith(item.href)
+            item.segment === "admin"
+              ? pathname === `${basePath}/admin`
+              : pathname.startsWith(href)
 
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.segment}
+              href={href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 collapsed && "justify-center px-2",
@@ -82,7 +86,7 @@ export function AdminSidebar() {
 
       <div className="p-2 border-t border-border space-y-1">
         <Link
-          href="/ro"
+          href={basePath}
           target="_blank"
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors",

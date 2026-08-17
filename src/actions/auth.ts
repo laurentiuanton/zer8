@@ -18,16 +18,24 @@ export async function getUser(): Promise<AuthUser | null> {
 
   if (!user) return null
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
 
-  return {
-    id: user.id,
-    email: user.email,
-    role: profile?.role ?? "customer",
+    return {
+      id: user.id,
+      email: user.email,
+      role: profile?.role ?? "customer",
+    }
+  } catch {
+    return {
+      id: user.id,
+      email: user.email,
+      role: "customer",
+    }
   }
 }
 
