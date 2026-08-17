@@ -39,6 +39,7 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
 
   const [isLoading, setIsLoading] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     firstName: "",
@@ -141,6 +142,7 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
     if (selectedPayment === "card") return
 
     setIsLoading(true)
+    setOrderError(null)
 
     const result = await placeOrder({
       items: items.map((item) => ({
@@ -168,6 +170,12 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
       },
       locale,
     })
+
+    if (result.error) {
+      setOrderError(result.error)
+      setIsLoading(false)
+      return
+    }
 
     if (result.success) {
       setOrderPlaced(true)
@@ -419,6 +427,13 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
                 </div>
               )}
             </div>
+
+            {/* Error */}
+            {orderError && (
+              <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive text-center">
+                {locale === "ro" ? "Eroare: " : "Error: "}{orderError}
+              </div>
+            )}
 
             {/* Place Order */}
             <Button

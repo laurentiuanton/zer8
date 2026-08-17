@@ -208,75 +208,79 @@ function buildConfirmationEmail(orderId: string, data: OrderData, locale: string
 }
 
 export async function placeOrder(data: OrderData) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!user) {
-    return { error: "Not authenticated" }
-  }
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      user_id: user.id,
-      status: "pending",
-      subtotal: data.subtotal,
-      shipping_cost: data.shipping,
-      tax: 0,
-      total: data.total,
-      currency: data.currency,
-      shipping_address: {
-        full_name: `${data.shippingAddress.firstName} ${data.shippingAddress.lastName}`,
-        phone: data.shippingAddress.phone,
-        address_line1: data.shippingAddress.address,
-        city: data.shippingAddress.city,
-        state: data.shippingAddress.county,
-        postal_code: data.shippingAddress.postalCode,
-        country: "Romania",
-      },
-      payment_method: data.paymentMethod,
-      notes: `Courier: ${data.courier}`,
-    })
-    .select("id")
-    .single()
-
-  if (orderError || !order) {
-    return { error: orderError?.message || "Failed to create order" }
-  }
-
-  const orderItems = data.items.map((item) => ({
-    order_id: order.id,
-    product_name: item.name,
-    variant_name: [item.size, item.color].filter(Boolean).join(" / "),
-    quantity: item.quantity,
-    price: item.price,
-    total: item.price * item.quantity,
-  }))
-
-  const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
-
-  if (itemsError) {
-    return { error: itemsError.message }
-  }
-
-  if (process.env.RESEND_API_KEY) {
-    try {
-      await resend.emails.send({
-        from: "ZER8 <noreply@zer8.ro>",
-        to: data.shippingAddress.email,
-        subject:
-          data.locale === "ro"
-            ? `ZER8 — Comanda #${order.id.slice(0, 8).toUpperCase()} confirmata`
-            : `ZER8 — Order #${order.id.slice(0, 8).toUpperCase()} confirmed`,
-        html: buildConfirmationEmail(order.id, data, data.locale),
-      })
-    } catch {
-      // Email failed but order was placed
+    if (!user) {
+      return { error: "Not authenticated" }
     }
-  }
 
-  return { success: true, orderId: order.id }
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        status: "pending",
+        subtotal: data.subtotal,
+        shipping_cost: data.shipping,
+        tax: 0,
+        total: data.total,
+        currency: data.currency,
+        shipping_address: {
+          full_name: `${data.shippingAddress.firstName} ${data.shippingAddress.lastName}`,
+          phone: data.shippingAddress.phone,
+          address_line1: data.shippingAddress.address,
+          city: data.shippingAddress.city,
+          state: data.shippingAddress.county,
+          postal_code: data.shippingAddress.postalCode,
+          country: "Romania",
+        },
+        payment_method: data.paymentMethod,
+        notes: `Courier: ${data.courier}`,
+      })
+      .select("id")
+      .single()
+
+    if (orderError || !order) {
+      return { error: orderError?.message || "Failed to create order" }
+    }
+
+    const orderItems = data.items.map((item) => ({
+      order_id: order.id,
+      product_name: item.name,
+      variant_name: [item.size, item.color].filter(Boolean).join(" / "),
+      quantity: item.quantity,
+      price: item.price,
+      total: item.price * item.quantity,
+    }))
+
+    const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
+
+    if (itemsError) {
+      return { error: itemsError.message }
+    }
+
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await resend.emails.send({
+          from: "ZER8 <noreply@zer8.ro>",
+          to: data.shippingAddress.email,
+          subject:
+            data.locale === "ro"
+              ? `ZER8 — Comanda #${order.id.slice(0, 8).toUpperCase()} confirmata`
+              : `ZER8 — Order #${order.id.slice(0, 8).toUpperCase()} confirmed`,
+          html: buildConfirmationEmail(order.id, data, data.locale),
+        })
+      } catch {
+        // Email failed but order was placed
+      }
+    }
+
+    return { success: true, orderId: order.id }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Unknown error" }
+  }
 }
