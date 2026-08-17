@@ -26,7 +26,12 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default async function AdminDashboardPage() {
-  const stats = await getDashboardStats()
+  let stats = null
+  try {
+    stats = await getDashboardStats()
+  } catch {
+    // Stats unavailable — render with zeros
+  }
 
   return (
     <div>

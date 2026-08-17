@@ -1,8 +1,6 @@
 import { getAdminUser } from "@/actions/auth"
-import { LogOut } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { signOut } from "@/actions/auth"
 import { Badge } from "@/components/ui/badge"
+import { SignOutButton } from "./SignOutButton"
 
 interface AdminHeaderProps {
   title: string
@@ -25,14 +23,7 @@ export async function AdminHeader({ title }: AdminHeaderProps) {
           </div>
           <span className="hidden md:inline">{user?.email}</span>
         </div>
-        <form action={async () => {
-          "use server"
-          await signOut()
-        }}>
-          <Button variant="ghost" size="sm" type="submit" className="text-muted-foreground hover:text-destructive">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </form>
+        <SignOutButton />
       </div>
     </header>
   )
