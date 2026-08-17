@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Lock, CreditCard, Truck, CheckCircle } from "lucide-react"
+import { ArrowLeft, Lock, CreditCard, Truck, CheckCircle, Banknote, Package } from "lucide-react"
 import { useCartStore } from "@/stores/cart"
 import { useCurrencyStore, formatPrice } from "@/stores/currency"
 import { placeOrder } from "@/actions/orders"
@@ -17,6 +17,19 @@ interface CheckoutPageClientProps {
   locale: "ro" | "en"
   user: AuthUser
 }
+
+const COURIERS = [
+  { id: "fan_courier", name: "Fan Courier", price: 15, logo: "📦" },
+  { id: "sameday", name: "Sameday", price: 15, logo: "📦" },
+  { id: "cargus", name: "Cargus", price: 15, logo: "📦" },
+  { id: "gls", name: "GLS Romania", price: 15, logo: "📦" },
+  { id: "dpd", name: "DPD Romania", price: 15, logo: "📦" },
+]
+
+const PAYMENT_METHODS = [
+  { id: "ramburs", label_ro: "Ramburs (la curier)", label_en: "Cash on Delivery", icon: Banknote },
+  { id: "card", label_ro: "Card bancar", label_en: "Card Payment", icon: CreditCard },
+]
 
 export default function CheckoutPageClient({ locale, user }: CheckoutPageClientProps) {
   const items = useCartStore((state) => state.items)
@@ -38,9 +51,13 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
     postalCode: "",
   })
 
+  const [selectedCourier, setSelectedCourier] = useState("fan_courier")
+  const [selectedPayment, setSelectedPayment] = useState("ramburs")
+
   const subtotal = getTotal()
-  const shipping = subtotal >= 200 ? 0 : 15
-  const total = subtotal + shipping
+  const courierObj = COURIERS.find((c) => c.id === selectedCourier)
+  const shippingCost = subtotal >= 200 ? 0 : (courierObj?.price || 15)
+  const total = subtotal + shippingCost
 
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
@@ -55,13 +72,17 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
         city: "Oras",
         county: "Judet",
         postalCode: "Cod postal",
+        courier: "Curier",
+        paymentMethod: "Modalitate de plata",
+        ramburs: "Ramburs (la curier)",
+        card: "Card bancar",
+        cardSoon: "Plata cu cardul va fi disponibila in curand",
         orderSummary: "Rezumat comanda",
         subtotal: "Subtotal",
         shipping: "Transport",
         freeShipping: "Gratuit",
         total: "Total",
         placeOrder: "Plaseaza comanda",
-        payWithCard: "Plateste cu cardul",
         processing: "Se proceseaza...",
         backToCart: "Inapoi la cos",
         emptyCart: "Cosul este gol",
@@ -70,6 +91,8 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
         orderConfirmation: "Vei primi un email de confirmare.",
         secureCheckout: "Checkout securizat",
         shippingPolicy: "Transport gratuit peste 200 RON",
+        deliveryTime: "Termen estimativ de livrare",
+        days24: "24-48 ore",
       },
       en: {
         title: "Checkout",
@@ -82,13 +105,17 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
         city: "City",
         county: "County",
         postalCode: "Postal Code",
+        courier: "Courier",
+        paymentMethod: "Payment Method",
+        ramburs: "Cash on Delivery",
+        card: "Card Payment",
+        cardSoon: "Card payment will be available soon",
         orderSummary: "Order Summary",
         subtotal: "Subtotal",
         shipping: "Shipping",
         freeShipping: "Free",
         total: "Total",
         placeOrder: "Place Order",
-        payWithCard: "Pay with Card",
         processing: "Processing...",
         backToCart: "Back to Cart",
         emptyCart: "Cart is empty",
@@ -97,6 +124,8 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
         orderConfirmation: "You will receive a confirmation email.",
         secureCheckout: "Secure Checkout",
         shippingPolicy: "Free shipping over 200 RON",
+        deliveryTime: "Estimated delivery",
+        days24: "24-48 hours",
       },
     }
     return translations[locale]?.[key] || key
@@ -108,6 +137,9 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (selectedPayment === "card") return
+
     setIsLoading(true)
 
     const result = await placeOrder({
@@ -119,9 +151,11 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
         price: item.price,
       })),
       subtotal,
-      shipping,
+      shipping: shippingCost,
       total,
       currency,
+      courier: selectedCourier,
+      paymentMethod: selectedPayment,
       shippingAddress: {
         firstName: form.firstName,
         lastName: form.lastName,
@@ -178,7 +212,6 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-8">
-        {/* Header */}
         <div className="mb-8 space-y-2">
           <Link
             href={`/${locale}/cart`}
@@ -191,8 +224,8 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
         </div>
 
         <div className="grid gap-8 lg:grid-cols-5">
-          {/* Shipping Form */}
           <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-8">
+            {/* Shipping Address */}
             <div className="rounded-xl border border-border bg-card p-6 space-y-6">
               <div className="flex items-center gap-2">
                 <Truck className="h-5 w-5 text-primary" />
@@ -294,19 +327,97 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
               </div>
             </div>
 
-            {/* Payment (placeholder for Stripe) */}
+            {/* Courier Selection */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">{t("courier")}</h2>
+              </div>
+
+              <div className="space-y-2">
+                {COURIERS.map((courier) => (
+                  <label
+                    key={courier.id}
+                    className={`flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-all ${
+                      selectedCourier === courier.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="courier"
+                      value={courier.id}
+                      checked={selectedCourier === courier.id}
+                      onChange={(e) => setSelectedCourier(e.target.value)}
+                      className="accent-[#0FED19]"
+                    />
+                    <span className="text-lg">{courier.logo}</span>
+                    <div className="flex-1">
+                      <span className="font-medium text-foreground">{courier.name}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {t("deliveryTime")}: {t("days24")}
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium text-foreground">
+                      {subtotal >= 200 ? (
+                        <span className="text-primary">{t("freeShipping")}</span>
+                      ) : (
+                        `${courier.price} RON`
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Method */}
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">{t("payWithCard")}</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t("paymentMethod")}</h2>
               </div>
-              <div className="rounded-lg border border-dashed border-border p-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {locale === "ro"
-                    ? "Plata cu cardul va fi disponibila in curand."
-                    : "Card payment will be available soon."}
-                </p>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {PAYMENT_METHODS.map((method) => {
+                  const Icon = method.icon
+                  const isDisabled = method.id === "card"
+                  return (
+                    <label
+                      key={method.id}
+                      className={`flex items-center gap-3 rounded-lg border p-4 transition-all ${
+                        isDisabled
+                          ? "opacity-50 cursor-not-allowed border-border"
+                          : `cursor-pointer ${
+                              selectedPayment === method.id
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={method.id}
+                        checked={selectedPayment === method.id}
+                        onChange={(e) => setSelectedPayment(e.target.value)}
+                        disabled={isDisabled}
+                        className="accent-[#0FED19]"
+                      />
+                      <Icon className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-medium text-foreground">
+                        {locale === "ro" ? method.label_ro : method.label_en}
+                      </span>
+                    </label>
+                  )
+                })}
               </div>
+
+              {selectedPayment === "card" && (
+                <div className="rounded-lg bg-muted/50 p-4 text-center">
+                  <p className="text-sm text-muted-foreground">{t("cardSoon")}</p>
+                </div>
+              )}
             </div>
 
             {/* Place Order */}
@@ -314,7 +425,7 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
               type="submit"
               size="lg"
               className="w-full min-h-[56px] text-base font-semibold"
-              disabled={isLoading}
+              disabled={isLoading || selectedPayment === "card"}
             >
               <Lock className="mr-2 h-4 w-4" />
               {isLoading ? t("processing") : t("placeOrder")} — {formatPrice(total, currency)}
@@ -361,9 +472,21 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
                   <span className="text-foreground">{formatPrice(subtotal, currency)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("shipping")}</span>
+                  <span className="text-muted-foreground">
+                    {t("shipping")} ({courierObj?.name})
+                  </span>
                   <span className="text-foreground">
-                    {shipping === 0 ? t("freeShipping") : formatPrice(shipping, currency)}
+                    {shippingCost === 0 ? (
+                      <span className="text-primary">{t("freeShipping")}</span>
+                    ) : (
+                      formatPrice(shippingCost, currency)
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t("paymentMethod")}</span>
+                  <span className="text-foreground">
+                    {selectedPayment === "ramburs" ? t("ramburs") : t("card")}
                   </span>
                 </div>
                 <Separator />

@@ -5,6 +5,14 @@ import { Resend } from "resend"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+const COURIER_NAMES: Record<string, string> = {
+  fan_courier: "Fan Courier",
+  sameday: "Sameday",
+  cargus: "Cargus",
+  gls: "GLS Romania",
+  dpd: "DPD Romania",
+}
+
 interface OrderItem {
   name: string
   size?: string
@@ -19,6 +27,8 @@ interface OrderData {
   shipping: number
   total: number
   currency: string
+  courier: string
+  paymentMethod: string
   shippingAddress: {
     firstName: string
     lastName: string
@@ -33,6 +43,16 @@ interface OrderData {
 }
 
 function buildConfirmationEmail(orderId: string, data: OrderData, locale: string) {
+  const courierName = COURIER_NAMES[data.courier] || data.courier
+  const paymentLabel =
+    data.paymentMethod === "ramburs"
+      ? locale === "ro"
+        ? "Ramburs (la curier)"
+        : "Cash on Delivery"
+      : locale === "ro"
+        ? "Card bancar"
+        : "Card Payment"
+
   const items = data.items
     .map(
       (item) =>
@@ -58,17 +78,13 @@ function buildConfirmationEmail(orderId: string, data: OrderData, locale: string
 <head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background-color:#222;font-family:'JetBrains Mono',monospace;">
   <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
-    <!-- Header -->
     <div style="text-align:center;padding:32px 0;border-bottom:2px solid #0FED19;">
-      <h1 style="margin:0;font-size:32px;color:#0FED19;letter-spacing:4px;text-shadow:0 0 10px rgba(15,237,25,0.5);">
-        ZER8
-      </h1>
+      <h1 style="margin:0;font-size:32px;color:#0FED19;letter-spacing:4px;text-shadow:0 0 10px rgba(15,237,25,0.5);">ZER8</h1>
       <p style="margin:8px 0 0;color:#888;font-size:12px;letter-spacing:2px;">
         ${locale === "ro" ? "CONFIRMARE COMANDA" : "ORDER CONFIRMATION"}
       </p>
     </div>
 
-    <!-- Order ID -->
     <div style="padding:24px 0;text-align:center;">
       <p style="margin:0;color:#888;font-size:12px;letter-spacing:1px;">
         ${locale === "ro" ? "NUMAR COMANDA" : "ORDER NUMBER"}
@@ -78,7 +94,6 @@ function buildConfirmationEmail(orderId: string, data: OrderData, locale: string
       </p>
     </div>
 
-    <!-- Greeting -->
     <div style="padding:16px 0;">
       <p style="margin:0;color:#ccc;font-size:14px;line-height:1.6;">
         ${locale === "ro" ? `Salut ${data.shippingAddress.firstName},` : `Hi ${data.shippingAddress.firstName},`}
@@ -90,7 +105,6 @@ function buildConfirmationEmail(orderId: string, data: OrderData, locale: string
       </p>
     </div>
 
-    <!-- Items Table -->
     <div style="padding:24px 0;">
       <h2 style="margin:0 0 16px;color:#0FED19;font-size:14px;letter-spacing:2px;border-bottom:1px solid #444;padding-bottom:8px;">
         ${locale === "ro" ? "PRODUSE" : "ITEMS"}
@@ -109,21 +123,22 @@ function buildConfirmationEmail(orderId: string, data: OrderData, locale: string
             </th>
           </tr>
         </thead>
-        <tbody>
-          ${items}
-        </tbody>
+        <tbody>${items}</tbody>
       </table>
     </div>
 
-    <!-- Totals -->
     <div style="padding:0 0 24px;">
       <div style="display:flex;justify-content:space-between;padding:8px 0;color:#ccc;font-size:13px;font-family:monospace;">
         <span>${locale === "ro" ? "Subtotal" : "Subtotal"}</span>
         <span>${data.subtotal.toFixed(2)} ${data.currency}</span>
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;color:#ccc;font-size:13px;font-family:monospace;">
-        <span>${locale === "ro" ? "Transport" : "Shipping"}</span>
+        <span>${locale === "ro" ? "Transport" : "Shipping"} (${courierName})</span>
         <span>${data.shipping === 0 ? freeShippingLabel : `${data.shipping.toFixed(2)} ${data.currency}`}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;color:#ccc;font-size:13px;font-family:monospace;">
+        <span>${locale === "ro" ? "Plata" : "Payment"}</span>
+        <span>${paymentLabel}</span>
       </div>
       <div style="display:flex;justify-content:space-between;padding:12px 0;border-top:2px solid #0FED19;margin-top:8px;">
         <span style="color:#fff;font-size:16px;font-weight:bold;font-family:monospace;">
@@ -135,20 +150,48 @@ function buildConfirmationEmail(orderId: string, data: OrderData, locale: string
       </div>
     </div>
 
-    <!-- Shipping Address -->
     <div style="padding:24px 0;border-top:1px solid #444;">
       <h2 style="margin:0 0 12px;color:#0FED19;font-size:14px;letter-spacing:2px;">
-        ${locale === "ro" ? "ADRESA DE LIVRARE" : "SHIPPING ADDRESS"}
+        ${locale === "ro" ? "LIVRARE" : "DELIVERY"}
       </h2>
-      <p style="margin:0;color:#ccc;font-size:13px;line-height:1.8;font-family:monospace;">
-        ${data.shippingAddress.firstName} ${data.shippingAddress.lastName}<br>
-        ${data.shippingAddress.address}<br>
-        ${data.shippingAddress.postalCode} ${data.shippingAddress.city}, ${data.shippingAddress.county}<br>
-        ${data.shippingAddress.phone}
-      </p>
+      <table style="width:100%;font-family:monospace;font-size:13px;color:#ccc;border:1px solid #444;border-radius:8px;overflow:hidden;">
+        <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #444;color:#888;width:40%;">
+            ${locale === "ro" ? "Curier" : "Courier"}
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #444;font-weight:bold;">${courierName}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #444;color:#888;">
+            ${locale === "ro" ? "Adresa" : "Address"}
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #444;">
+            ${data.shippingAddress.firstName} ${data.shippingAddress.lastName}<br>
+            ${data.shippingAddress.address}<br>
+            ${data.shippingAddress.postalCode} ${data.shippingAddress.city}, ${data.shippingAddress.county}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;color:#888;">
+            ${locale === "ro" ? "Telefon" : "Phone"}
+          </td>
+          <td style="padding:10px 12px;">${data.shippingAddress.phone}</td>
+        </tr>
+      </table>
     </div>
 
-    <!-- Footer -->
+    ${data.paymentMethod === "ramburs" ? `
+    <div style="padding:16px 0;">
+      <div style="background:rgba(237,0,212,0.1);border:1px solid rgba(237,0,212,0.3);border-radius:8px;padding:16px;text-align:center;">
+        <p style="margin:0;color:#ED00D4;font-size:13px;font-family:monospace;">
+          ${locale === "ro"
+            ? "Plata se efectueaza numerar la curier in momentul livrarii."
+            : "Payment is made in cash to the courier upon delivery."}
+        </p>
+      </div>
+    </div>
+    ` : ""}
+
     <div style="padding:32px 0;border-top:1px solid #444;text-align:center;">
       <p style="margin:0;color:#888;font-size:11px;line-height:1.8;">
         ${locale === "ro"
@@ -175,7 +218,6 @@ export async function placeOrder(data: OrderData) {
     return { error: "Not authenticated" }
   }
 
-  // Insert order
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -195,7 +237,8 @@ export async function placeOrder(data: OrderData) {
         postal_code: data.shippingAddress.postalCode,
         country: "Romania",
       },
-      payment_method: "pending",
+      payment_method: data.paymentMethod,
+      notes: `Courier: ${data.courier}`,
     })
     .select("id")
     .single()
@@ -204,7 +247,6 @@ export async function placeOrder(data: OrderData) {
     return { error: orderError?.message || "Failed to create order" }
   }
 
-  // Insert order items
   const orderItems = data.items.map((item) => ({
     order_id: order.id,
     product_name: item.name,
@@ -220,15 +262,15 @@ export async function placeOrder(data: OrderData) {
     return { error: itemsError.message }
   }
 
-  // Send confirmation email
   if (process.env.RESEND_API_KEY) {
     try {
       await resend.emails.send({
         from: "ZER8 <noreply@zer8.ro>",
         to: data.shippingAddress.email,
-        subject: data.locale === "ro"
-          ? `ZER8 — Comanda #${order.id.slice(0, 8).toUpperCase()} confirmata`
-          : `ZER8 — Order #${order.id.slice(0, 8).toUpperCase()} confirmed`,
+        subject:
+          data.locale === "ro"
+            ? `ZER8 — Comanda #${order.id.slice(0, 8).toUpperCase()} confirmata`
+            : `ZER8 — Order #${order.id.slice(0, 8).toUpperCase()} confirmed`,
         html: buildConfirmationEmail(order.id, data, data.locale),
       })
     } catch {
