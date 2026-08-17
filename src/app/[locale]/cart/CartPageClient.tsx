@@ -66,8 +66,8 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
         <ShoppingBag className="h-24 w-24 text-muted-foreground mb-6" />
         <h1 className="text-2xl font-bold text-foreground mb-2">{t("empty")}</h1>
         <p className="text-muted-foreground mb-6">{t("emptyDescription")}</p>
-        <Button asChild size="lg" className="min-h-[56px]">
-          <Link href={`/${locale}/products`}>{t("continueShopping")}</Link>
+        <Button render={<Link href={`/${locale}/products`} />} size="lg" className="min-h-[56px]">
+          {t("continueShopping")}
         </Button>
       </div>
     )
@@ -185,15 +185,13 @@ export default function CartPageClient({ locale }: CartPageClientProps) {
 
               <p className="text-xs text-muted-foreground">{t("shippingInfo")}</p>
 
-              <Button asChild size="lg" className="w-full min-h-[56px]">
-                <Link href={`/${locale}/checkout`}>
-                  {t("checkout")}
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Link>
+              <Button render={<Link href={`/${locale}/checkout`} />} size="lg" className="w-full min-h-[56px]">
+                {t("checkout")}
+                <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
 
-              <Button asChild variant="ghost" className="w-full">
-                <Link href={`/${locale}/products`}>{t("continueShopping")}</Link>
+              <Button render={<Link href={`/${locale}/products`} />} variant="ghost" className="w-full">
+                {t("continueShopping")}
               </Button>
             </div>
           </div>

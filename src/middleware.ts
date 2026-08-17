@@ -6,7 +6,6 @@ const LOCALES = ["ro", "en"]
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  // Allow auth callback through without any processing
   if (pathname.startsWith("/auth/")) {
     return NextResponse.next()
   }
@@ -70,6 +69,29 @@ export async function middleware(request: NextRequest) {
     const locale = LOCALES.includes(pathname.split("/")[1]) ? pathname.split("/")[1] : "ro"
     url.pathname = `/${locale}`
     return NextResponse.redirect(url)
+  }
+
+  if (pathWithoutLocale.startsWith("/admin")) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      const locale = LOCALES.includes(pathname.split("/")[1]) ? pathname.split("/")[1] : "ro"
+      url.pathname = `/${locale}/login`
+      url.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(url)
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
+    if (profile?.role !== "admin") {
+      const url = request.nextUrl.clone()
+      const locale = LOCALES.includes(pathname.split("/")[1]) ? pathname.split("/")[1] : "ro"
+      url.pathname = `/${locale}`
+      return NextResponse.redirect(url)
+    }
   }
 
   return response

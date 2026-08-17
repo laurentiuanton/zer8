@@ -157,10 +157,8 @@ export function Header({ locale, user }: HeaderProps) {
               </button>
             ) : (
               /* Not logged in — show login button */
-              <Button variant="ghost" size="icon" className="touch-target" asChild>
-                <Link href={`/${locale}/login`}>
-                  <LogIn className="h-5 w-5" />
-                </Link>
+              <Button variant="ghost" size="icon" className="touch-target" render={<Link href={`/${locale}/login`} />}>
+                <LogIn className="h-5 w-5" />
               </Button>
             )}
 

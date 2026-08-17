@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 export interface AuthUser {
   id: string
   email: string | undefined
+  role: string | null
 }
 
 export async function getUser(): Promise<AuthUser | null> {
@@ -17,10 +18,23 @@ export async function getUser(): Promise<AuthUser | null> {
 
   if (!user) return null
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
   return {
     id: user.id,
     email: user.email,
+    role: profile?.role ?? "customer",
   }
+}
+
+export async function getAdminUser(): Promise<AuthUser | null> {
+  const user = await getUser()
+  if (!user || user.role !== "admin") return null
+  return user
 }
 
 export async function signInWithGoogle(locale: string) {

@@ -190,8 +190,8 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center space-y-6">
           <h1 className="text-3xl font-bold text-foreground">{t("emptyCart")}</h1>
-          <Button asChild size="lg" className="min-h-[48px]">
-            <Link href={`/${locale}/products`}>{t("continueShopping")}</Link>
+          <Button render={<Link href={`/${locale}/products`} />} size="lg" className="min-h-[48px]">
+            {t("continueShopping")}
           </Button>
         </div>
       </div>
@@ -209,8 +209,8 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
           </div>
           <h1 className="text-3xl font-bold text-foreground">{t("orderSuccess")}</h1>
           <p className="text-muted-foreground">{t("orderConfirmation")}</p>
-          <Button asChild size="lg" className="min-h-[48px]">
-            <Link href={`/${locale}/products`}>{t("continueShopping")}</Link>
+          <Button render={<Link href={`/${locale}/products`} />} size="lg" className="min-h-[48px]">
+            {t("continueShopping")}
           </Button>
         </div>
       </div>

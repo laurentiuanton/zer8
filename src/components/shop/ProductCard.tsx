@@ -127,11 +127,9 @@ export function ProductCard({ product, locale }: ProductCardProps) {
               size="icon"
               variant="secondary"
               className="h-10 w-10 rounded-full bg-background/80 backdrop-blur hover:bg-primary hover:text-primary-foreground"
-              asChild
+              render={<span />}
             >
-              <span>
-                <Eye className="h-4 w-4" />
-              </span>
+              <Eye className="h-4 w-4" />
             </Button>
           </div>
         </div>

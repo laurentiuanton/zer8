@@ -94,11 +94,9 @@ export default async function HomePage({ params }: HomePageProps) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-foreground">{t("featuredProducts")}</h2>
-            <Button variant="ghost" asChild>
-              <Link href={`/${validLocale}/products`} className="gap-2">
-                {t("viewAll")}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+            <Button variant="ghost" render={<Link href={`/${validLocale}/products`} className="gap-2" />}>
+              {t("viewAll")}
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
           <ProductGrid products={products} locale={validLocale as "ro" | "en"} />
@@ -140,11 +138,9 @@ export default async function HomePage({ params }: HomePageProps) {
                 ? "Descopera colectia noastra exclusiva de tricouri cu design unic. Doar 89 de bucati disponibile!"
                 : "Discover our exclusive collection of t-shirts with unique design. Only 89 pieces available!"}
             </p>
-            <Button size="lg" asChild className="min-h-[56px] px-8">
-              <Link href={`/${validLocale}/products`}>
-                {validLocale === "ro" ? "Cumpara acum" : "Shop Now"}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+            <Button size="lg" render={<Link href={`/${validLocale}/products`} />} className="min-h-[56px] px-8">
+              {validLocale === "ro" ? "Cumpara acum" : "Shop Now"}
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         </div>

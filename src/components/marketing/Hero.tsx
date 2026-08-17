@@ -101,21 +101,19 @@ export function Hero({ locale }: HeroProps) {
             <div className="animate-fade-in-delay flex flex-col sm:flex-row gap-4">
               <Button
                 size="lg"
-                asChild
+                render={<Link href={`/${locale}/products`} />}
                 className="animate-pulse-glow min-h-[56px] px-8 text-base font-semibold rounded-xl"
               >
-                <Link href={`/${locale}/products`}>
-                  {t("shopNow")}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+                {t("shopNow")}
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                asChild
+                render={<Link href={`/${locale}/products`} />}
                 className="min-h-[56px] px-8 text-base font-semibold rounded-xl border-primary/30 hover:bg-primary/10 hover:border-primary/50"
               >
-                <Link href={`/${locale}/products`}>{t("viewCollection")}</Link>
+                {t("viewCollection")}
               </Button>
             </div>
 
@@ -160,10 +158,8 @@ export function Hero({ locale }: HeroProps) {
                       </p>
                       <p className="text-2xl font-bold text-primary text-glow-green">229 RON</p>
                     </div>
-                    <Button asChild size="lg" className="rounded-xl min-h-[48px]">
-                      <Link href={`/${locale}/products/tricou-og-nicu-negru`}>
-                        <ArrowRight className="h-5 w-5" />
-                      </Link>
+                    <Button render={<Link href={`/${locale}/products/tricou-og-nicu-negru`} />} size="lg" className="rounded-xl min-h-[48px]">
+                      <ArrowRight className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
