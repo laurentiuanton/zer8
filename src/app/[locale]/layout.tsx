@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
+import { getUser } from "@/actions/auth"
 
 export const metadata: Metadata = {
   title: "ZER8 - Magazin Oficial",
@@ -21,10 +22,11 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params
   const validLocale = locale === "en" ? "en" : "ro"
+  const user = await getUser()
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header locale={validLocale as "ro" | "en"} />
+      <Header locale={validLocale as "ro" | "en"} user={user} />
       <main className="flex-1">{children}</main>
       <Footer locale={validLocale as "ro" | "en"} />
     </div>

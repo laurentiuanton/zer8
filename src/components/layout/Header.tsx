@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ShoppingBag, Menu, X, User, LogIn, UserPlus } from "lucide-react"
+import { ShoppingBag, Menu, X, User, LogIn, UserPlus, LogOut, Mail } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { useCartStore } from "@/stores/cart"
 import { LanguageSwitcher } from "./LanguageSwitcher"
@@ -9,15 +9,18 @@ import { CurrencySwitcher } from "./CurrencySwitcher"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { usePathname } from "next/navigation"
-
+import { signOut } from "@/actions/auth"
+import type { AuthUser } from "@/actions/auth"
 
 interface HeaderProps {
   locale: "ro" | "en"
+  user: AuthUser | null
 }
 
-export function Header({ locale }: HeaderProps) {
+export function Header({ locale, user }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const itemCount = useCartStore((state) => state.getItemCount())
   const pathname = usePathname()
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -34,6 +37,11 @@ export function Header({ locale }: HeaderProps) {
     }
   }, [isUserMenuOpen])
 
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    await signOut()
+  }
+
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
       ro: {
@@ -45,6 +53,9 @@ export function Header({ locale }: HeaderProps) {
         login: "Autentificare",
         register: "Inregistrare",
         account: "Contul meu",
+        signOut: "Deconectare",
+        signedInAs: "Autentificat ca",
+        myOrders: "Comenzile mele",
       },
       en: {
         home: "Home",
@@ -55,6 +66,9 @@ export function Header({ locale }: HeaderProps) {
         login: "Login",
         register: "Register",
         account: "My Account",
+        signOut: "Sign Out",
+        signedInAs: "Signed in as",
+        myOrders: "My Orders",
       },
     }
     return translations[locale]?.[key] || key
@@ -128,42 +142,84 @@ export function Header({ locale }: HeaderProps) {
 
           {/* User Menu */}
           <div className="relative" ref={userMenuRef}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="touch-target"
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            >
-              <User className="h-5 w-5" />
-            </Button>
+            {user ? (
+              /* Logged in — show email button */
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20">
+                  <User className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <span className="max-w-[120px] truncate font-medium text-foreground">
+                  {user.email?.split("@")[0]}
+                </span>
+              </button>
+            ) : (
+              /* Not logged in — show login button */
+              <Button variant="ghost" size="icon" className="touch-target" asChild>
+                <Link href={`/${locale}/login`}>
+                  <LogIn className="h-5 w-5" />
+                </Link>
+              </Button>
+            )}
 
             {isUserMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-52 rounded-lg border border-border bg-popover p-2 shadow-xl animate-scale-in">
-                <Link
-                  href={`/${locale}/login`}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                  onClick={() => setIsUserMenuOpen(false)}
-                >
-                  <LogIn className="h-4 w-4" />
-                  {t("login")}
-                </Link>
-                <Link
-                  href={`/${locale}/register`}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                  onClick={() => setIsUserMenuOpen(false)}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  {t("register")}
-                </Link>
-                <Separator className="my-1" />
-                <Link
-                  href={`/${locale}/account`}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                  onClick={() => setIsUserMenuOpen(false)}
-                >
-                  <User className="h-4 w-4" />
-                  {t("account")}
-                </Link>
+              <div className="absolute right-0 top-full mt-2 w-60 rounded-lg border border-border bg-popover p-2 shadow-xl animate-scale-in">
+                {user ? (
+                  <>
+                    {/* User info */}
+                    <div className="px-3 py-2 mb-1">
+                      <p className="text-xs text-muted-foreground">{t("signedInAs")}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
+                    </div>
+                    <Separator className="my-1" />
+                    <Link
+                      href={`/${locale}/account`}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <User className="h-4 w-4" />
+                      {t("account")}
+                    </Link>
+                    <Link
+                      href={`/${locale}/cart`}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      {t("myOrders")}
+                    </Link>
+                    <Separator className="my-1" />
+                    <button
+                      onClick={handleSignOut}
+                      disabled={isSigningOut}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {isSigningOut ? "..." : t("signOut")}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href={`/${locale}/login`}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <LogIn className="h-4 w-4" />
+                      {t("login")}
+                    </Link>
+                    <Link
+                      href={`/${locale}/register`}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      {t("register")}
+                    </Link>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -201,6 +257,19 @@ export function Header({ locale }: HeaderProps) {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background/98 backdrop-blur">
           <div className="mx-auto max-w-7xl px-4 py-4 space-y-1">
+            {/* User info (mobile) */}
+            {user && (
+              <div className="flex items-center gap-3 rounded-lg bg-primary/5 border border-primary/20 px-4 py-3 mb-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20">
+                  <Mail className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">{t("signedInAs")}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
+                </div>
+              </div>
+            )}
+
             <Link
               href={`/${locale}`}
               className={`block rounded-lg px-4 py-3 text-base font-medium transition-colors ${
@@ -236,20 +305,43 @@ export function Header({ locale }: HeaderProps) {
             </div>
 
             <div className="mt-3 space-y-1">
-              <Link
-                href={`/${locale}/login`}
-                className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-foreground/70 hover:bg-accent/50 hover:text-foreground transition-colors"
-              >
-                <LogIn className="h-5 w-5" />
-                {t("login")}
-              </Link>
-              <Link
-                href={`/${locale}/register`}
-                className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-foreground/70 hover:bg-accent/50 hover:text-foreground transition-colors"
-              >
-                <UserPlus className="h-5 w-5" />
-                {t("register")}
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href={`/${locale}/account`}
+                    className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-foreground/70 hover:bg-accent/50 hover:text-foreground transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <User className="h-5 w-5" />
+                    {t("account")}
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    disabled={isSigningOut}
+                    className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    {isSigningOut ? "..." : t("signOut")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={`/${locale}/login`}
+                    className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-foreground/70 hover:bg-accent/50 hover:text-foreground transition-colors"
+                  >
+                    <LogIn className="h-5 w-5" />
+                    {t("login")}
+                  </Link>
+                  <Link
+                    href={`/${locale}/register`}
+                    className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-foreground/70 hover:bg-accent/50 hover:text-foreground transition-colors"
+                  >
+                    <UserPlus className="h-5 w-5" />
+                    {t("register")}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
