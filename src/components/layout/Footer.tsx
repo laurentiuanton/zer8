@@ -60,6 +60,7 @@ export function Footer({ locale }: FooterProps) {
   const legalLinks = [
     { href: `/${locale}/privacy`, label: t("privacyPolicy") },
     { href: `/${locale}/terms`, label: t("termsOfService") },
+    { href: `/${locale}/cookies`, label: locale === "ro" ? "Politica de Cookie-uri" : "Cookie Policy" },
   ]
 
   return (
@@ -136,16 +137,16 @@ export function Footer({ locale }: FooterProps) {
             <h3 className="text-sm font-semibold text-foreground">{t("newsletter")}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t("newsletterDescription")}</p>
             <form className="mt-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <input
                   type="email"
                   placeholder={t("emailPlaceholder")}
-                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[48px]"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[48px]"
                   required
                 />
                 <button
                   type="submit"
-                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[48px] min-w-[48px]"
+                  className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors min-h-[48px] whitespace-nowrap"
                 >
                   {locale === "ro" ? "Abonare" : "Subscribe"}
                 </button>

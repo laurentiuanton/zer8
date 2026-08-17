@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
+import { CookieConsent } from "@/components/marketing/CookieConsent"
 import { getUser } from "@/actions/auth"
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default async function LocaleLayout({
       <Header locale={validLocale as "ro" | "en"} user={user} />
       <main className="flex-1">{children}</main>
       <Footer locale={validLocale as "ro" | "en"} />
+      <CookieConsent locale={validLocale as "ro" | "en"} />
     </div>
   )
 }
