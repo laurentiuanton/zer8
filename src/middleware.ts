@@ -4,6 +4,13 @@ import { NextResponse, type NextRequest } from "next/server"
 const LOCALES = ["ro", "en"]
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Allow auth callback through without any processing
+  if (pathname.startsWith("/auth/")) {
+    return NextResponse.next()
+  }
+
   const response = NextResponse.next({
     request: { headers: request.headers },
   })
@@ -38,7 +45,6 @@ export async function middleware(request: NextRequest) {
     // Auth check failed, continue without user
   }
 
-  const pathname = request.nextUrl.pathname
   const pathWithoutLocale = "/" + pathname.split("/").slice(2).join("/")
 
   const protectedRoutes = ["/checkout", "/orders", "/account"]
