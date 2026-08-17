@@ -219,6 +219,16 @@ export async function placeOrder(data: OrderData) {
       return { error: "Not authenticated" }
     }
 
+    // Ensure profile exists (for users who signed up before the trigger was added)
+    await supabase.from("profiles").upsert(
+      {
+        id: user.id,
+        email: user.email || "",
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+      },
+      { onConflict: "id" }
+    )
+
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
