@@ -1,9 +1,15 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Resend } from "resend"
+import nodemailer from "nodemailer"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+})
 
 const COURIER_NAMES: Record<string, string> = {
   fan_courier: "Fan Courier",
@@ -273,10 +279,10 @@ export async function placeOrder(data: OrderData) {
       return { error: itemsError.message }
     }
 
-    if (process.env.RESEND_API_KEY) {
+    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       try {
-        await resend.emails.send({
-          from: "ZER8 <onboarding@resend.dev>",
+        await transporter.sendMail({
+          from: `"ZER8" <${process.env.GMAIL_USER}>`,
           to: data.shippingAddress.email,
           subject:
             data.locale === "ro"
