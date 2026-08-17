@@ -80,20 +80,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single()
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
 
-      if (profile?.role !== "admin") {
-        const url = request.nextUrl.clone()
-        const locale = LOCALES.includes(pathname.split("/")[1]) ? pathname.split("/")[1] : "ro"
-        url.pathname = `/${locale}`
-        return NextResponse.redirect(url)
-      }
-    } catch {
+    if (error || profile?.role !== "admin") {
       const url = request.nextUrl.clone()
       const locale = LOCALES.includes(pathname.split("/")[1]) ? pathname.split("/")[1] : "ro"
       url.pathname = `/${locale}`

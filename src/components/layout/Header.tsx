@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ShoppingBag, Menu, X, User, LogIn, UserPlus, LogOut, Mail } from "lucide-react"
+import { ShoppingBag, Menu, X, User, LogIn, UserPlus, LogOut, Mail, LayoutDashboard } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { useCartStore } from "@/stores/cart"
 import { LanguageSwitcher } from "./LanguageSwitcher"
@@ -188,6 +188,16 @@ export function Header({ locale, user }: HeaderProps) {
                       <ShoppingBag className="h-4 w-4" />
                       {t("myOrders")}
                     </Link>
+                    {user.role === "admin" && (
+                      <Link
+                        href={`/${locale}/admin`}
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-primary hover:bg-primary/10 transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    )}
                     <Separator className="my-1" />
                     <button
                       onClick={handleSignOut}
@@ -313,6 +323,16 @@ export function Header({ locale, user }: HeaderProps) {
                     <User className="h-5 w-5" />
                     {t("account")}
                   </Link>
+                  {user.role === "admin" && (
+                    <Link
+                      href={`/${locale}/admin`}
+                      className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-primary hover:bg-primary/10 transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <LayoutDashboard className="h-5 w-5" />
+                      Admin Panel
+                    </Link>
+                  )}
                   <button
                     onClick={handleSignOut}
                     disabled={isSigningOut}
