@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Lock, CreditCard, Truck, CheckCircle } from "lucide-react"
 import { useCartStore } from "@/stores/cart"
 import { useCurrencyStore, formatPrice } from "@/stores/currency"
+import { placeOrder } from "@/actions/orders"
 import type { AuthUser } from "@/actions/auth"
 
 interface CheckoutPageClientProps {
@@ -109,11 +110,36 @@ export default function CheckoutPageClient({ locale, user }: CheckoutPageClientP
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate order processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    const result = await placeOrder({
+      items: items.map((item) => ({
+        name: item.name,
+        size: item.size,
+        color: item.color,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      subtotal,
+      shipping,
+      total,
+      currency,
+      shippingAddress: {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+        city: form.city,
+        county: form.county,
+        postalCode: form.postalCode,
+      },
+      locale,
+    })
 
-    setOrderPlaced(true)
-    cartClearCart()
+    if (result.success) {
+      setOrderPlaced(true)
+      cartClearCart()
+    }
+
     setIsLoading(false)
   }
 
